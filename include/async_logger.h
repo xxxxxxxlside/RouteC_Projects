@@ -7,6 +7,8 @@
 #include <mutex>            //3. 引入锁
 #include <condition_variable>//4. 引入条件变量
 #include <chrono>           // 1. 新增：时间库
+#include <fstream>          // 用于获取文件大小
+#include <cstdio>
 
 // 2. 新增：定义日志等级枚举
 enum class LogLevel {
@@ -28,7 +30,8 @@ public:
 
     // 初始化：设置日志文件名
     // 例如：Init("app.log")
-    bool Init(const std::string& filename);
+    // 新增：初始化时传入最大文件大小 (单位：字节)，默认 1MB (1024*1024)
+    bool Init(const std::string& filename, size_t max_file_size = 1024 * 1024);
 
     // 3. 修改 Log 函数：增加等级参数，默认是 INFO
     void Log(const std::string& msg,LogLevel level = LogLevel::INFO);
@@ -48,11 +51,22 @@ private:
     // 5. 新增：辅助函数，用于获取当前时间字符串
     std::string GetCurrentTime();
 
+    // 【新增】检查文件大小，如果超标则轮转
+    void CheckFileSize();
+
+    // 【新增】执行轮转操作 (重命名文件)
+    void RotateFile();
+
     // 成员变量：日志文件名
     std::string filename_;
 
+    std::string base_filename_; // 基础文件名 (不含路径扩展名，方便拼接 .1, .2)
+
     // 成员变量：文件指针 (先声明，稍后实现)
     FILE* file_;
+
+    size_t max_file_size_;      // 允许的最大文件大小
+    size_t current_file_size_;  // 当前文件已写入的大小
 
     //【新增】异步核心组件
     std::queue<std::string> log_queue_;     // 日志缓冲队列
