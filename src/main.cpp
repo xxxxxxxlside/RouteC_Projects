@@ -8,26 +8,31 @@ int main() {
     AsyncLogger logger;
 
     // 2. 初始化日志文件
-    if (!logger.Init("async_test.log")) {
+    if (!logger.Init("day3_test.log")) {
 
         std::cout << "日志初始化失败！" << std::endl;
         return -1;
 
     }
 
-    std::cout << "日志初始化成功！后台线程已启动。" << std::endl;
+    std::cout << "Day 3:带时间戳的异步日志启动!" << std::endl;
 
-    std::cout << "开始模拟高并发写入..." << std::endl;
+    
 
-    // 模拟 10 个线程同时写日志
+    // 模拟不同场景的日志
+    logger.Log("系统启动成功...", LogLevel::INFO);
+    logger.Log("正在加载配置文件...", LogLevel::DEBUG);
+    logger.Log("警告：内存使用率较高！", LogLevel::WARN);
+    logger.Log("错误：无法连续数据库！", LogLevel::ERROR);
+
+    // 再来点并发测试
 
     std::vector<std::thread> threads;
-    for(int i = 0; i < 10; ++i) {
+    for(int i = 0; i < 5; ++i) {
         threads.emplace_back([&logger,i](){
-            for(int j = 0; j < 100; ++j) {
-                std::string msg = "Thread-" + std::to_string(i) + "- Log-"
-+std::to_string(j);
-                logger.Log(msg);
+            for(int j = 0; j < 20; ++j) {
+                logger.Log("线程-" + std::to_string(i) + "处理任务-" +
+std::to_string(j), LogLevel::INFO);
 
             }
         });
@@ -38,12 +43,12 @@ int main() {
         t.join();
     }
 
-    std::cout << "所有线程写入完成，正在停止日志器..." << std::endl;
+    logger.Log("所有任务完成，系统关闭。", LogLevel::INFO);
 
     // 停止时会等待后台把剩余日志写完
     logger.Stop();
 
-    std::cout << "完成！请查看 async_test.log 文件 ，应该有1000行日志" <<std::endl;
+    std::cout << "完成！请查看 day3_test.log 文件 " <<std::endl;
 
     return 0;
 

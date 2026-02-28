@@ -6,6 +6,15 @@
 #include <thread>           //2. 引入线程
 #include <mutex>            //3. 引入锁
 #include <condition_variable>//4. 引入条件变量
+#include <chrono>           // 1. 新增：时间库
+
+// 2. 新增：定义日志等级枚举
+enum class LogLevel {
+    DEBUG,
+    INFO,
+    WARN,
+    ERROR
+};
 
 // 异步日志器类
 class AsyncLogger {
@@ -21,11 +30,9 @@ public:
     // 例如：Init("app.log")
     bool Init(const std::string& filename);
 
-   
+    // 3. 修改 Log 函数：增加等级参数，默认是 INFO
+    void Log(const std::string& msg,LogLevel level = LogLevel::INFO);
 
-    // 写日志：传入一条字符串消息
-    // 例如：Log("Hello, RouteC!")
-    void Log(const std::string& msg);// 这个函数现在只负责“丢进队列”
 
     // 停止：刷新缓冲区并关闭文件
     void Stop();
@@ -34,6 +41,12 @@ private:
     
     //【新增】后台线程执行函数
     void WriteLoop();
+
+    // 4. 新增：辅助函数，用于把等级枚举换成字符串(如INFO -> "INFO")
+    std::string LogLevelToString(LogLevel level);
+
+    // 5. 新增：辅助函数，用于获取当前时间字符串
+    std::string GetCurrentTime();
 
     // 成员变量：日志文件名
     std::string filename_;
