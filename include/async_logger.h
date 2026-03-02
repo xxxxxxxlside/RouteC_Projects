@@ -78,4 +78,26 @@ private:
 
 };
 
+// ... (类定义结束后的位置) ...
+
+
+// =========================================
+// 宏封装 (Macro Wrappers)
+// 让调用像 spdlog/glog 一样简洁
+// =========================================
+
+// 基础宏：接受 logger 对象、等级、消息
+#define LOG(logger, level, msg) \
+    do { \
+        if ((logger) != nullptr) { \
+            (logger) -> Log((msg), (level)); \
+        }\
+    } while(0)
+
+// 便捷宏，针对不同等级，自动填入 level
+#define LOG_DEBUG(logger, msg) LOG(logger, LogLevel::DEBUG, msg)
+#define LOG_INFO(logger, msg) LOG(logger, LogLevel::INFO, msg)
+#define LOG_WARN(logger, msg) LOG(logger, LogLevel::WARN, msg)
+#define LOG_ERROR(logger, msg) LOG(logger, LogLevel::ERROR, msg)
+
 #endif // ASYNC_LOGGER_H

@@ -7,7 +7,7 @@ int main() {
     // 1 . 创建日志对象
     AsyncLogger logger;
 
-    // 2. 初始化日志文件
+    // 2. 初始化日志文件 (限制 1KB 以测试轮转)
     if (!logger.Init("rotation_test.log", 1024)) {
 
         std::cout << "日志初始化失败！" << std::endl;
@@ -15,33 +15,25 @@ int main() {
 
     }
 
-    std::cout << "Day 5:日志轮转测试(限制 1KB)" << std::endl;
+    std::cout << "Day 6: 宏封装 + 日志轮转 综合测试" << std::endl;
+    std::cout << "  (文件大小限制 1KB ,观察是否自动切分)" << std::endl;
 
-    // 写入一条比较长的日志，确保能触发轮转
-    std::string long_msg = "This is a very long log message designed to exceed the 1KB limit quickly. ";
 
-    for (int i = 0; i < 20; ++i) {
-        logger.Log(long_msg + "Index: " + std::to_string(i), LogLevel::INFO);
+    // 3. 体验宏封装，简洁的调用方式
+    LOG_INFO(&logger, "系统启动成功...");
+    LOG_DEBUG(&logger, "正在加载配置文件...");
+    LOG_WARN(&logger, "警告：内存使用率较高！");
+    LOG_ERROR(&logger, "错误：无法连接数据库");
+    
 
-    }
+    // 4. 并发测试
 
-    // 等待一下让后台线程处理
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-
-    // 模拟不同场景的日志
-    //logger.Log("系统启动成功...", LogLevel::INFO);
-    //logger.Log("正在加载配置文件...", LogLevel::DEBUG);
-    //logger.Log("警告：内存使用率较高！", LogLevel::WARN);
-    //logger.Log("错误：无法连续数据库！", LogLevel::ERROR);
-
-    // 再来点并发测试
-
-    /*std::vector<std::thread> threads;
+    std::vector<std::thread> threads;
     for(int i = 0; i < 5; ++i) {
         threads.emplace_back([&logger,i](){
             for(int j = 0; j < 20; ++j) {
-                logger.Log("线程-" + std::to_string(i) + "处理任务-" +
-std::to_string(j), LogLevel::INFO);
+                LOG_INFO(&logger,"线程-" + std::to_string(i) + "处理任务-" +
+std::to_string(j));
 
             }
         });
@@ -50,16 +42,17 @@ std::to_string(j), LogLevel::INFO);
     // 等待所有线程结束
     for (auto& t : threads) {
         t.join();
-    } */
+    } 
 
-    //logger.Log("所有任务完成，系统关闭。", LogLevel::INFO);
+   
 
-    // 停止时会等待后台把剩余日志写完
+    // 5.停止时会等待后台把剩余日志写完
     logger.Stop();
 
     std::cout << " 测试完成！请查看目录： " <<std::endl;
     std::cout << "      - rotation_test.log(新文件) " <<std::endl;
     std::cout << "      - rotation_test.log.old (旧文件，被切分出来的) " <<std::endl;
+    std::cout << "   - 打开文件看看，时间戳、等级、宏调用都生效了吗？" << std::endl;
 
     return 0;
 
