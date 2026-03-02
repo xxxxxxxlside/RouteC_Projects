@@ -6,8 +6,15 @@
 #include <ctime>   // C风格时间转换
 #include <sys/stat.h> // 用于 stat 获取文件大小 (Linux/WSL)
 
+// 【关键 3】实现单例获取函数
+AsyncLogger& AsyncLogger::Instance() {
+    // c++11 魔法：静态局部变量变量在第一次执行初始化，且线程安全
+    static AsyncLogger instance;
+    return instance;
+}
 
-// 构造函数：初始化状态
+
+// 构造函数：(现在是私有的)
 AsyncLogger::AsyncLogger() : file_(nullptr), is_running_(false),
 max_file_size_(0),current_file_size_(0){
 
@@ -170,6 +177,8 @@ void AsyncLogger::WriteLoop() {
 
 
 // 初始化：启动后台线程
+// Init 函数稍微改一下：如果已经初始化过，要不要重新初始化？
+// 简单起见，我么允许重新 Init (比如切换文件)
 
 bool AsyncLogger::Init(const std::string& filename, size_t max_file_size) {
     // 如果已经打开了，先关闭旧的(防止重复打开)
@@ -202,8 +211,12 @@ bool AsyncLogger::Init(const std::string& filename, size_t max_file_size) {
     is_running_ = true;
 
     // 【关键】启动后台线程
-    worker_thread_ = std::thread(&AsyncLogger::WriteLoop,this);
-
+    // 注意：如果线程已经跑起来了，就不需要再启动了
+    // 但为了简单，我们假设 Init 只调用一次，或者在 Stop 之后调用
+    if (!worker_thread_.joinable()) {
+         worker_thread_ = std::thread(&AsyncLogger::WriteLoop,this);
+    }
+   
     return true;//打开成功
 }
 

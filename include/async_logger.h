@@ -22,11 +22,15 @@ enum class LogLevel {
 class AsyncLogger {
 
 public:
-    // 构造函数
-    AsyncLogger();
 
-    // 析构函数
-    ~AsyncLogger();
+    // 【关键 1】 获取唯一实例的静态方法
+    static AsyncLogger& Instance();
+
+    
+    // 禁止拷贝和赋值 (防止出现第二个实例)
+    AsyncLogger(const AsyncLogger&) = delete;
+    AsyncLogger& operator = (const AsyncLogger) = delete;
+
 
     // 初始化：设置日志文件名
     // 例如：Init("app.log")
@@ -34,13 +38,17 @@ public:
     bool Init(const std::string& filename, size_t max_file_size = 1024 * 1024);
 
     // 3. 修改 Log 函数：增加等级参数，默认是 INFO
-    void Log(const std::string& msg,LogLevel level = LogLevel::INFO);
+    void Log(const std::string& msg, LogLevel level = LogLevel::INFO);
 
 
     // 停止：刷新缓冲区并关闭文件
     void Stop();
 
 private:
+
+    // 【关键 2】 构造函数私有化 (只能由 Instance() 创建)
+    AsyncLogger();
+    ~AsyncLogger();
     
     //【新增】后台线程执行函数
     void WriteLoop();
@@ -82,22 +90,19 @@ private:
 
 
 // =========================================
-// 宏封装 (Macro Wrappers)
-// 让调用像 spdlog/glog 一样简洁
+// 宏封装 (终极版，不需要传 logger 对象!)
 // =========================================
-
+// 直接调用单例实例
 // 基础宏：接受 logger 对象、等级、消息
-#define LOG(logger, level, msg) \
+#define LOG(level, msg) \
     do { \
-        if ((logger) != nullptr) { \
-            (logger) -> Log((msg), (level)); \
-        }\
+        AsyncLogger::Instance().Log((msg), (level)); \
     } while(0)
 
 // 便捷宏，针对不同等级，自动填入 level
-#define LOG_DEBUG(logger, msg) LOG(logger, LogLevel::DEBUG, msg)
-#define LOG_INFO(logger, msg) LOG(logger, LogLevel::INFO, msg)
-#define LOG_WARN(logger, msg) LOG(logger, LogLevel::WARN, msg)
-#define LOG_ERROR(logger, msg) LOG(logger, LogLevel::ERROR, msg)
+#define LOG_DEBUG(msg) LOG(LogLevel::DEBUG, (msg))
+#define LOG_INFO(msg) LOG(LogLevel::INFO, (msg))
+#define LOG_WARN(msg) LOG(LogLevel::WARN, (msg))
+#define LOG_ERROR(msg) LOG(LogLevel::ERROR, (msg))
 
 #endif // ASYNC_LOGGER_H

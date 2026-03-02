@@ -7,6 +7,7 @@
 #include <unistd.h> // 记得加这个
 
 // --- 模拟一个最简单的同步日志类（用于对比）---
+// 这个类不用改，因为它不是单例，是局部变量
 class SyncLogger {
 
 public:
@@ -39,14 +40,20 @@ void run_test(const std::string&name, int count, bool is_async) {
     auto start = std::chrono::high_resolution_clock::now();
 
     if(is_async) {
-        // === 异步测试 ===
-        AsyncLogger logger;
-        logger.Init("async_bench.log");
+        // === 异步测试 (改用单例模式)===
+
+        // 1. 初始化单例 (如果之前没初始化过)
+        // 注意：基准测试每次都要更新文件，所以这里强制 Init
+        AsyncLogger::Instance().Init("async_bench.log", 100 * 1024 * 1024);
+        //设置大一点，避免轮转干扰
 
         for (int i = 0; i < count; ++i) {
-            logger.Log("This is log message number: " + std::to_string(i));
+            // 2. 直接调用单例 Log
+            AsyncLogger::Instance().Log("This is log message number: " + std::to_string(i));
         }
-        logger.Stop(); // 确保所有日志写完
+
+        // 3. 停止单例，确保数据写完
+        AsyncLogger::Instance().Stop(); // 确保所有日志写完
 
     } else {
         // === 同步测试 ===
@@ -71,7 +78,7 @@ void run_test(const std::string&name, int count, bool is_async) {
 int main() {
     int count = 5000; // 先测 5000 条 
 
-    std::cout << " Day 4 : 异步 vs 同步 性能大比拼" << std::endl;
+    std::cout << " Day 7 : 单例模式下的性能基准测试" << std::endl;
     std::cout << " 准备写入 " << count << " 条日志..." << std::endl;
     std::cout << std::endl;
 
@@ -79,7 +86,7 @@ int main() {
     run_test("同步日志 (Sync)", count, false);
 
     // 2. 再跑异步 (应该飞快)
-    run_test(" 异步测试 (Async)", count, true);
+    run_test(" 异步日志 (Async)", count, true);
 
     std::cout << " 测试全部结束！请查看 sync_bench.log 和 async_bench.log" << std::endl;
 
